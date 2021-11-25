@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.yhp.study.last_bbs.mappers.IUserMapper">
+    <update id="updateAutoSingKeyExtended">
+        UPDATE `last_bbs`.`user_auto_sign_keys`
+        SET `expires_at` = DATE_ADD(NOW(), INTERVAL #{days} DAY)
+        WHERE `key` = #{key}
+          AND `expires_at` > NOW()
+          AND `expired_flag` = FALSE
+        LIMIT 1
+    </update>
+
+    <update id="updateAutoSignKeyExpired">
+        UPDATE `last_bbs`.`user_auto_sign_keys`
+        SET `expired_flag` = TRUE
+        WHERE `key` = #{key}
+          AND `expires_at` > NOW()
+          AND `expired_flag` = FALSE
+        LIMIT 1
+    </update>
+
+    <select id="selectEmailCount" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`users`
+        WHERE `email` = #{email}
+    </select>
+
+    <select id="selectNicknameCount" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`users`
+        WHERE `nickname` = #{nickname}
+    </select>
+
+    <select id="selectContactCount" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`users`
+        WHERE `contact_first` = #{contactFirst}
+          AND `contact_second` = #{contactSecond}
+          AND `contact_third` = #{contactThird}
+    </select>
+
+    <insert id="insertUser" parameterType="dev.yhp.study.last_bbs.vos.user.RegisterVo">
+        INSERT INTO `last_bbs`.`users` (`email`, `password`, `nickname`, `name_first`, `name_optional`, `name_last`,
+                                        `contact_first`, `contact_second`, `contact_third`, `address_post`,
+                                        `address_primary`, `address_secondary`)
+        VALUES (#{email}, #{hashedPassword}, #{nickname}, #{nameFirst}, #{nameOptional}, #{nameLast}, #{contactFirst},
+                #{contactSecond}, #{contactThird}, #{addressPost}, #{addressPrimary}, #{addressSecondary})
+    </insert>
+
+    <select id="selectUser"
+            parameterType="dev.yhp.study.last_bbs.vos.user.LoginVo"
+            resultType="dev.yhp.study.last_bbs.dtos.UserDto">
+        SELECT `index`             AS `index`,
+               `email`             AS `email`,
+               `password`          AS `password`,
+               `nickname`          AS `nickname`,
+               `name_first`        AS `nameFirst`,
+               `name_optional`     AS `nameOptional`,
+               `name_last`         AS `nameLast`,
+               `contact_first`     AS `contactFirst`,
+               `contact_second`    AS `contactSecond`,
+               `contact_third`     AS `contactThird`,
+               `address_post`      AS `addressPost`,
+               `address_primary`   AS `addressPrimary`,
+               `address_secondary` AS `addressSecondary`,
+               `level`             AS `level`
+        FROM `last_bbs`.`users`
+        WHERE `email` = #{email}
+          AND `password` = #{hashedPassword}
+        LIMIT 1
+    </select>
+
+    <select id="selectUserFromCookie" resultType="dev.yhp.study.last_bbs.dtos.UserDto">
+        SELECT `user`.`index`             AS `index`,
+               `user`.`email`             AS `email`,
+               `user`.`password`          AS `password`,
+               `user`.`nickname`          AS `nickname`,
+               `user`.`name_first`        AS `nameFirst`,
+               `user`.`name_optional`     AS `nameOptional`,
+               `user`.`name_last`         AS `nameLast`,
+               `user`.`contact_first`     AS `contactFirst`,
+               `user`.`contact_second`    AS `contactSecond`,
+               `user`.`contact_third`     AS `contactThird`,
+               `user`.`address_post`      AS `addressPost`,
+               `user`.`address_primary`   AS `addressPrimary`,
+               `user`.`address_secondary` AS `addressSecondary`,
+               `user`.`level`             AS `level`
+        FROM `last_bbs`.`user_auto_sign_keys` AS `key`
+                 LEFT JOIN `last_bbs`.`users` AS `user` ON `key`.`user_email` = `user`.`email`
+        WHERE `key`.`key` = #{key}
+          AND `key`.`expires_at` > NOW()
+          AND `key`.`expired_flag` = FALSE
+        LIMIT 1
+    </select>
+
+    <insert id="insertAutoSignKey">
+        INSERT INTO `last_bbs`.`user_auto_sign_keys` (`user_email`, `key`, `expires_at`)
+        VALUES (#{email}, #{key}, DATE_ADD(NOW(), INTERVAL #{days} DAY))
+    </insert>
+
+    <update id="updateUser">
+        UPDATE `last_bbs`.`users`
+        SET `password`          = #{hashedPasswordNew},
+            `contact_first`     = #{contactFirst},
+            `contact_second`    = #{contactSecond},
+            `contact_third`     = #{contactThird},
+            `address_post`      = #{addressPost},
+            `address_primary`   = #{addressPrimary},
+            `address_secondary` = #{addressSecondary}
+        WHERE `email` = #{user.email}
+        LIMIT 1
+    </update>
+
+    <select id="selectEmail" parameterType="dev.yhp.study.last_bbs.vos.user.ForgotEmailSendCodeVo" resultType="String">
+        SELECT `email`
+        FROM `last_bbs`.`users`
+        WHERE `name_first` = #{nameFirst}
+          AND `name_optional` = #{nameOptional}
+          AND `name_last` = #{nameLast}
+          AND `contact_first` = #{contactFirst}
+          AND `contact_second` = #{contactSecond}
+          AND `contact_third` = #{contactThird}
+        LIMIT 1
+    </select>
+
+    <insert id="insertForgotEmailAuthCode">
+        INSERT INTO `last_bbs`.`forgot_email_codes` (`key`, `ip`, `email`, `code`, `expires_at`)
+        VALUES (#{key}, #{ip}, #{email}, #{code}, DATE_ADD(NOW(), INTERVAL #{minutes} MINUTE))
+    </insert>
+
+    <insert id="insertForgotPasswordAuthCode">
+        INSERT INTO `last_bbs`.`forgot_password_codes` (`key`, `ip`, `email`, `code`, `expires_at`)
+        VALUES (#{key}, #{ip}, #{email}, #{code}, DATE_ADD(NOW(), INTERVAL #{minutes} MINUTE))
+    </insert>
+
+    <select id="selectEmailByAuthCodeFromEmail" resultType="String">
+        SELECT `email`
+        FROM `last_bbs`.`forgot_email_codes`
+        WHERE `code` = #{authCode}
+          AND `key` = #{key}
+          AND `ip` = #{ip}
+          AND `expires_at` > NOW()
+          AND `expired_flag` = FALSE
+    </select>
+
+    <select id="selectEmailByAuthCodeFromPassword" resultType="String">
+        SELECT `email`
+        FROM `last_bbs`.`forgot_password_codes`
+        WHERE `code` = #{authCode}
+          AND `key` = #{key}
+          AND `ip` = #{ip}
+          AND `expires_at` > NOW()
+          AND `expired_flag` = FALSE
+    </select>
+
+    <update id="updateEmailAuthCodeExpired">
+        UPDATE `last_bbs`.`forgot_email_codes`
+        SET `expired_flag` = TRUE
+        WHERE `key` = #{key}
+        LIMIT 1
+    </update>
+
+    <update id="updatePasswordAuthCodeExpired">
+        UPDATE `last_bbs`.`forgot_password_codes`
+        SET `expired_flag` = TRUE
+        WHERE `key` = #{key}
+        LIMIT 1
+    </update>
+
+    <select id="selectUserCount" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`users`
+        WHERE `email` = #{email}
+          AND `contact_first` = #{contactFirst}
+          AND `contact_second` = #{contactSecond}
+          AND `contact_third` = #{contactThird}
+    </select>
+
+    <update id="updateUserPassword">
+        UPDATE `last_bbs`.`users`
+        SET `password`= #{password}
+        WHERE `email` = #{email}
+        LIMIT 1
+    </update>
+</mapper>

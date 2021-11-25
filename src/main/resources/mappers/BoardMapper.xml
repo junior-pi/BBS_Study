@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.yhp.study.last_bbs.mappers.IBoardMapper">
+    <delete id="deleteArticle">
+        DELETE
+        FROM `last_bbs`.`articles`
+        WHERE `index` = #{aid}
+        LIMIT 1
+    </delete>
+
+    <select id="selectArticle" resultType="dev.yhp.study.last_bbs.dtos.ArticleDto">
+        SELECT `index`      AS `index`,
+               `board_id`   AS `boardId`,
+               `user_email` AS `userEmail`,
+               `title`      AS `title`,
+               `content`    AS `content`,
+               `timestamp`  AS `timestamp`,
+               `view`       AS `view`
+        FROM `last_bbs`.`articles`
+        WHERE `index` = #{aid}
+        LIMIT 1
+    </select>
+
+    <select id="selectArticles" resultType="dev.yhp.study.last_bbs.dtos.ArticleDto">
+        SELECT `index`      AS `index`,
+               `board_id`   AS `boardId`,
+               `user_email` AS `userEmail`,
+               `title`      AS `title`,
+               `content`    AS `content`,
+               `timestamp`  AS `timestamp`,
+               `view`       AS `view`
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+        ORDER BY `index` DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectArticlesByTitle" resultType="dev.yhp.study.last_bbs.dtos.ArticleDto">
+        SELECT `index`      AS `index`,
+               `board_id`   AS `boardId`,
+               `user_email` AS `userEmail`,
+               `title`      AS `title`,
+               `content`    AS `content`,
+               `timestamp`  AS `timestamp`,
+               `view`       AS `view`
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND `title` LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY `index` DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectArticleCountByTitle" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND `title` LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+
+    <select id="selectArticlesByContent" resultType="dev.yhp.study.last_bbs.dtos.ArticleDto">
+        SELECT `index`      AS `index`,
+               `board_id`   AS `boardId`,
+               `user_email` AS `userEmail`,
+               `title`      AS `title`,
+               `content`    AS `content`,
+               `timestamp`  AS `timestamp`,
+               `view`       AS `view`
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND (`title` LIKE CONCAT('%', #{keyword}, '%') OR `content` LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY `index` DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectArticleCountByContent" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND (`title` LIKE CONCAT('%', #{keyword}, '%') OR `content` LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+    <select id="selectArticlesByEmail" resultType="dev.yhp.study.last_bbs.dtos.ArticleDto">
+        SELECT `index`      AS `index`,
+               `board_id`   AS `boardId`,
+               `user_email` AS `userEmail`,
+               `title`      AS `title`,
+               `content`    AS `content`,
+               `timestamp`  AS `timestamp`,
+               `view`       AS `view`
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND BINARY `user_email` = #{keyword}
+        ORDER BY `index` DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectArticleCountByEmail" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+          AND BINARY `user_email` = #{keyword}
+    </select>
+
+    <select id="selectArticleCount" resultType="_int">
+        SELECT COUNT(`index`)
+        FROM `last_bbs`.`articles`
+        WHERE `board_id` = #{bid}
+    </select>
+
+    <select id="selectBoards" resultType="dev.yhp.study.last_bbs.dtos.BoardDto">
+        SELECT `index`         AS `index`,
+               `id`            AS `id`,
+               `name`          AS `name`,
+               `level_list`    AS `levelList`,
+               `level_read`    AS `levelRead`,
+               `level_write`   AS `levelWrite`,
+               `level_comment` AS `levelComment`
+        FROM `last_bbs`.`boards`
+    </select>
+
+    <select id="selectBoard" resultType="dev.yhp.study.last_bbs.dtos.BoardDto">
+        SELECT `index`         AS `index`,
+               `id`            AS `id`,
+               `name`          AS `name`,
+               `level_list`    AS `levelList`,
+               `level_read`    AS `levelRead`,
+               `level_write`   AS `levelWrite`,
+               `level_comment` AS `levelComment`
+        FROM `last_bbs`.`boards`
+        WHERE `id` = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectBoardByArticle" resultType="dev.yhp.study.last_bbs.dtos.BoardDto">
+        SELECT `board`.`index`         AS `index`,
+               `board`.`id`            AS `id`,
+               `board`.`name`          AS `name`,
+               `board`.`level_list`    AS `levelList`,
+               `board`.`level_read`    AS `levelRead`,
+               `board`.`level_write`   AS `levelWrite`,
+               `board`.`level_comment` AS `levelComment`
+        FROM `last_bbs`.`articles` AS `article`
+                 LEFT JOIN `last_bbs`.`boards` AS `board` ON `article`.`board_id` = `board`.`id`
+        WHERE `article`.`index` = #{aid}
+        LIMIT 1
+    </select>
+
+    <select id="selectComments" resultType="dev.yhp.study.last_bbs.dtos.CommentDto">
+        SELECT `index`         AS `index`,
+               `article_index` AS `articleId`,
+               `user_email`    AS `userEmail`,
+               `timestamp`     AS `timestamp`,
+               `content`       AS `content`
+        FROM `last_bbs`.`comments`
+        WHERE `article_index` = #{aid}
+    </select>
+
+    <insert id="insertArticle">
+        INSERT INTO `last_bbs`.`articles` (`board_id`, `user_email`, `title`, `content`)
+        VALUES (#{bid}, #{uid}, #{title}, #{content})
+    </insert>
+
+    <insert id="insertComment">
+        INSERT INTO `last_bbs`.`comments` (`article_index`, `user_email`, `content`)
+        VALUES (#{aid}, #{uid}, #{content})
+    </insert>
+
+    <update id="updateArticle">
+        UPDATE `last_bbs`.`articles`
+        SET `title`   = #{title},
+            `content` = #{content}
+        WHERE `index` = #{aid}
+        LIMIT 1
+    </update>
+
+    <update id="updateArticleViewed">
+        UPDATE `last_bbs`.`articles`
+        SET `view` = `view` + 1
+        WHERE `index` = #{aid}
+        LIMIT 1
+    </update>
+</mapper>
